@@ -54,7 +54,9 @@ interface Item {
   id: string;
   img: string;
   url: string;
-  height: number;
+  aspectRatio?: { width: number; height: number };
+  isVideo?: boolean;
+  videoUrl?: string;
 }
 
 interface GridItem extends Item {
@@ -74,7 +76,6 @@ interface MasonryProps {
   scaleOnHover?: boolean;
   hoverScale?: number;
   blurToFocus?: boolean;
-  colorShiftOnHover?: boolean;
   onLoadMore?: () => void;
   hasMore?: boolean;
   onItemClick?: (item: Item) => void;
@@ -84,20 +85,19 @@ const Masonry: React.FC<MasonryProps> = ({
   items,
   ease = 'power3.out',
   duration = 0.6,
-  stagger = 0.05,
+  stagger = 0.04,
   animateFrom = 'bottom',
   scaleOnHover = true,
   hoverScale = 0.95,
   blurToFocus = true,
-  colorShiftOnHover = false,
   onLoadMore,
   hasMore = false,
   onItemClick
 }) => {
   const columns = useMedia(
-    ['(min-width:1500px)', '(min-width:1000px)', '(min-width:600px)', '(min-width:400px)'],
-    [5, 4, 3, 2],
-    1
+    ['(min-width:1500px)', '(min-width:1000px)', '(min-width:600px)'],
+    [5, 4, 3],
+    2
   );
 
   const [containerRef, { width }] = useMeasure<HTMLDivElement>();
@@ -132,32 +132,59 @@ const Masonry: React.FC<MasonryProps> = ({
   const grid = useMemo<GridItem[]>(() => {
     if (!width) return [];
     const colHeights = new Array(columns).fill(0);
-    const gap = 16;
+    const gap = 2;
     const totalGaps = (columns - 1) * gap;
     const columnWidth = (width - totalGaps) / columns;
 
     return items.map((child, idx) => {
       const col = colHeights.indexOf(Math.min(...colHeights));
       const x = col * (columnWidth + gap);
-      const height = child.height / 2;
-      const y = colHeights[col];
 
-      colHeights[col] += height + gap;
-      return { ...child, x, y, w: columnWidth, h: height, _key: `${child.id}-${idx}` };
+      const itemHeight = child.aspectRatio
+        ? columnWidth * (child.aspectRatio.height / child.aspectRatio.width)
+        : 400;
+
+      const y = colHeights[col];
+      colHeights[col] += itemHeight + gap;
+      return { ...child, x, y, w: columnWidth, h: itemHeight, _key: `${child.id}-${idx}` };
     });
   }, [columns, items, width]);
 
   const hasMounted = useRef(false);
+  const seenKeys = useRef<Set<string>>(new Set());
+  const newItemCounter = useRef(0);
+
+  // IMMEDIATELY hide new items at their start position BEFORE browser paint
+  // This prevents the flash of items at CSS default (0,0) before GSAP animates them
+  useLayoutEffect(() => {
+    grid.forEach(item => {
+      if (!seenKeys.current.has(item._key)) {
+        const start = getInitialPosition(item);
+        gsap.set(`[data-key="${item._key}"]`, {
+          opacity: 0,
+          x: start.x,
+          y: start.y,
+          width: item.w,
+          height: item.h,
+        });
+      }
+    });
+  }, [grid]);
 
   useLayoutEffect(() => {
     if (!imagesReady) return;
 
+    newItemCounter.current = 0;
+
     grid.forEach((item, index) => {
       const selector = `[data-key="${item._key}"]`;
       const animProps = { x: item.x, y: item.y, width: item.w, height: item.h };
+      const isNewItem = !seenKeys.current.has(item._key);
 
-      if (!hasMounted.current) {
+      if (!hasMounted.current || isNewItem) {
+        // First mount OR new items: animate from their hidden start position
         const start = getInitialPosition(item);
+        const newItemIdx = isNewItem ? newItemCounter.current++ : index;
         gsap.fromTo(
           selector,
           {
@@ -172,12 +199,16 @@ const Masonry: React.FC<MasonryProps> = ({
             opacity: 1,
             ...animProps,
             ...(blurToFocus && { filter: 'blur(0px)' }),
-            duration: 0.8,
+            duration: 0.6,
             ease: 'power3.out',
-            delay: index * stagger
+            delay: isNewItem
+              ? Math.min(newItemIdx, 20) * stagger
+              : index * stagger
           }
         );
+        seenKeys.current.add(item._key);
       } else {
+        // Existing item — smooth transition
         gsap.to(selector, {
           ...animProps,
           duration,
@@ -189,6 +220,14 @@ const Masonry: React.FC<MasonryProps> = ({
 
     hasMounted.current = true;
   }, [grid, imagesReady, stagger, animateFrom, blurToFocus, duration, ease]);
+
+  // Reset tracking when items are cleared
+  useEffect(() => {
+    if (items.length === 0) {
+      seenKeys.current.clear();
+      hasMounted.current = false;
+    }
+  }, [items.length]);
 
   useEffect(() => {
     if (!onLoadMore || !hasMore || !sentinelRef.current) return;
@@ -204,23 +243,15 @@ const Masonry: React.FC<MasonryProps> = ({
     return () => observer.disconnect();
   }, [onLoadMore, hasMore, items.length]);
 
-  const handleMouseEnter = (key: string, element: HTMLElement) => {
+  const handleMouseEnter = (key: string) => {
     if (scaleOnHover) {
       gsap.to(`[data-key="${key}"]`, { scale: hoverScale, duration: 0.3, ease: 'power2.out' });
     }
-    if (colorShiftOnHover) {
-      const overlay = element.querySelector('.color-overlay') as HTMLElement;
-      if (overlay) gsap.to(overlay, { opacity: 0.3, duration: 0.3 });
-    }
   };
 
-  const handleMouseLeave = (key: string, element: HTMLElement) => {
+  const handleMouseLeave = (key: string) => {
     if (scaleOnHover) {
       gsap.to(`[data-key="${key}"]`, { scale: 1, duration: 0.3, ease: 'power2.out' });
-    }
-    if (colorShiftOnHover) {
-      const overlay = element.querySelector('.color-overlay') as HTMLElement;
-      if (overlay) gsap.to(overlay, { opacity: 0, duration: 0.3 });
     }
   };
 
@@ -235,20 +266,31 @@ const Masonry: React.FC<MasonryProps> = ({
         <div
           key={item._key}
           data-key={item._key}
-          className="absolute box-content overflow-hidden rounded-[10px] shadow-[0px_10px_50px_-10px_rgba(0,0,0,0.2)] cursor-pointer"
+          className="absolute box-content overflow-hidden rounded-xl cursor-pointer bg-transparent"
           style={{ willChange: 'transform, width, height, opacity' }}
-          onClick={() => onItemClick ? onItemClick(item) : item.url ? window.open(item.url, '_blank', 'noopener') : undefined}
-          onMouseEnter={e => handleMouseEnter(item._key, e.currentTarget)}
-          onMouseLeave={e => handleMouseLeave(item._key, e.currentTarget)}
+          onClick={() => onItemClick ? onItemClick(item) : undefined}
+          onMouseEnter={() => handleMouseEnter(item._key)}
+          onMouseLeave={() => handleMouseLeave(item._key)}
         >
-          <div
-            className="relative w-full h-full bg-cover bg-center"
-            style={{ backgroundImage: `url(${item.img})` }}
-          >
-            {colorShiftOnHover && (
-              <div className="color-overlay absolute inset-0 bg-gradient-to-tr from-pink-500/50 to-sky-500/50 opacity-0 pointer-events-none" />
-            )}
-          </div>
+          {item.isVideo ? (
+            <video
+              src={item.videoUrl}
+              poster={item.img}
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="w-full h-full object-contain"
+            />
+          ) : (
+            <img
+              src={item.img}
+              alt=""
+              className="w-full h-full object-contain select-none"
+              loading="lazy"
+              draggable={false}
+            />
+          )}
         </div>
       ))}
       {hasMore && <div ref={sentinelRef} className="h-4 w-full" />}
