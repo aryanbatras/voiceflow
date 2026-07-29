@@ -17,11 +17,13 @@ import {
   LayoutGrid,
   Zap,
   User,
+  Scan,
 } from 'lucide-react';
 import { useSpells } from '@/hooks/useSpells';
 
 const MENU_ITEMS = [
   { label: 'Notifications', path: '/notifications', icon: Bell, badge: true, guestHidden: true },
+  { label: 'Immersive', path: '/immersive', icon: Scan },
   { label: 'Discover', path: '/discover', icon: LayoutGrid },
   { label: 'Groups', path: '/groups', icon: Users, guestHidden: true },
   { label: 'Spells', path: '/spells', icon: Zap, guestHidden: true },
@@ -55,7 +57,7 @@ export function MobileNav() {
     return () => { document.body.style.overflow = ''; };
   }, [menuOpen]);
 
-  if (pathname === '/login' || pathname === '/signup' || pathname === '/' || pathname?.startsWith('/oauth') || pathname === '/reels' || pathname === '/compose') {
+  if (pathname === '/login' || pathname === '/signup' || pathname === '/' || pathname?.startsWith('/oauth') || pathname === '/reels' || pathname === '/compose' || pathname?.startsWith('/immersive')) {
     return null;
   }
 

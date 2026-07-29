@@ -2,6 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { publicGetFeedGenerators, publicGetPopularFeedGenerators } from '@/services/public-api';
 import { CURATED_FEEDS } from '@/services/feeds';
 
+async function imageToDataUri(url: string): Promise<string> {
+  if (!url) return url;
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    if (!res.ok) return url;
+    const buf = await res.arrayBuffer();
+    const base64 = Buffer.from(buf).toString('base64');
+    const mime = res.headers.get('Content-Type') || 'image/jpeg';
+    return `data:${mime};base64,${base64}`;
+  } catch {
+    return url;
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -33,6 +47,15 @@ export async function GET(request: NextRequest) {
         likeCount: (live as any)?.likeCount ?? 0,
       };
     });
+
+    // Inline avatars as data URIs so WebGL can use them without CORS proxy
+    await Promise.all(
+      merged.map(async (feed) => {
+        if (feed.avatar) {
+          feed.avatar = await imageToDataUri(feed.avatar);
+        }
+      })
+    );
 
     return NextResponse.json({ feeds: merged, total: CURATED_FEEDS.length });
   } catch (error) {

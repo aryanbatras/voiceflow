@@ -8,6 +8,30 @@ import {
   getPopularFeedGenerators,
 } from '@/services/feeds';
 
+async function imageToDataUri(url: string): Promise<string> {
+  if (!url || url.startsWith('data:')) return url;
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    if (!res.ok) return url;
+    const buf = await res.arrayBuffer();
+    const base64 = Buffer.from(buf).toString('base64');
+    const mime = res.headers.get('Content-Type') || 'image/jpeg';
+    return `data:${mime};base64,${base64}`;
+  } catch {
+    return url;
+  }
+}
+
+async function inlineAvatars(feeds: any[]): Promise<void> {
+  await Promise.all(
+    feeds.map(async (feed: any) => {
+      if (feed.avatar) {
+        feed.avatar = await imageToDataUri(feed.avatar);
+      }
+    })
+  );
+}
+
 export async function GET(request: NextRequest) {
   try {
     const agent = await getAgentFromRequest(request);
@@ -26,12 +50,14 @@ export async function GET(request: NextRequest) {
     if (feedUrisParam) {
       const uris = feedUrisParam.split(',').map((u) => u.trim()).filter(Boolean);
       const feeds = await getFeedGeneratorsInfo(agent, uris);
+      await inlineAvatars(feeds);
       return NextResponse.json({ feeds });
     }
 
     // ─── Mode: Suggested feeds ────────────────────────────────────
     if (mode === 'suggested') {
       const result = await getSuggestedFeeds(agent, limit, cursor || undefined);
+      await inlineAvatars(result.feeds);
       return NextResponse.json({
         feeds: result.feeds,
         cursor: result.cursor,
@@ -45,6 +71,7 @@ export async function GET(request: NextRequest) {
         cursor: cursor || undefined,
         query: query || undefined,
       });
+      await inlineAvatars(result.feeds);
       return NextResponse.json({
         feeds: result.feeds,
         cursor: result.cursor,
@@ -83,6 +110,8 @@ export async function GET(request: NextRequest) {
         };
       });
 
+      await inlineAvatars(merged);
+
       return NextResponse.json({
         feeds: merged,
         category,
@@ -104,6 +133,8 @@ export async function GET(request: NextRequest) {
         category: curated.category,
       };
     });
+
+    await inlineAvatars(merged);
 
     return NextResponse.json({ feeds: merged, total: CURATED_FEEDS.length });
   } catch (error) {

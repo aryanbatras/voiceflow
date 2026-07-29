@@ -17,12 +17,13 @@ import {
   Settings,
   Play,
   List,
+  Scan,
 } from 'lucide-react';
 
 interface NavEntry {
   label: string;
   path: string;
-  icon: 'home' | 'search' | 'reels' | 'bell' | 'feeds' | 'groups' | 'spells' | 'bookmarks' | 'lists' | 'profile' | 'settings';
+  icon: 'home' | 'search' | 'reels' | 'bell' | 'feeds' | 'groups' | 'spells' | 'bookmarks' | 'lists' | 'profile' | 'settings' | 'immersive';
   badge?: boolean;
   hideEffect?: string;
   guestHidden?: boolean;
@@ -31,6 +32,7 @@ interface NavEntry {
 const NAV_ENTRIES: NavEntry[] = [
   { label: 'Home', path: '/feed', icon: 'home' },
   { label: 'Search', path: '/search', icon: 'search', hideEffect: 'hide_search_nav' },
+  { label: 'Immersive', path: '/immersive', icon: 'immersive' },
   { label: 'Reels', path: '/reels', icon: 'reels', guestHidden: true },
   { label: 'Notifications', path: '/notifications', icon: 'bell', badge: true, guestHidden: true },
   { label: 'Discover', path: '/discover', icon: 'feeds', hideEffect: 'hide_feeds_nav' },
@@ -55,6 +57,7 @@ function NavIcon({ icon, isActive }: { icon: string; isActive: boolean }) {
     case 'spells': return <Zap className={className} />;
     case 'bookmarks': return <BookmarksIcon />;
     case 'settings': return <Settings className={className} />;
+    case 'immersive': return <Scan className={className} />;
     default: return <Home className={className} />;
   }
 }
@@ -71,7 +74,7 @@ export function Sidebar() {
   const unread = (unreadData as any)?.count ?? 0;
   const spells = useSpells();
 
-  if (pathname === '/login' || pathname === '/signup' || pathname === '/' || pathname?.startsWith('/oauth')) {
+  if (pathname === '/login' || pathname === '/signup' || pathname === '/' || pathname?.startsWith('/oauth') || pathname?.startsWith('/immersive')) {
     return null;
   }
 

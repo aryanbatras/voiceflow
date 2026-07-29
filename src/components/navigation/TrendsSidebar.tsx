@@ -7,7 +7,7 @@ export function TrendsSidebar() {
   const pathname = usePathname();
   const { session } = useAuth();
 
-  if (pathname === '/login' || pathname === '/' || pathname?.startsWith('/oauth')) {
+  if (pathname === '/login' || pathname === '/' || pathname?.startsWith('/oauth') || pathname?.startsWith('/immersive')) {
     return null;
   }
 
