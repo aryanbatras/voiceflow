@@ -280,7 +280,9 @@ const Masonry: React.FC<MasonryProps> = ({
               muted
               loop
               playsInline
+              preload="auto"
               className="w-full h-full object-contain"
+              onCanPlay={e => { (e.target as HTMLVideoElement).play().catch(() => {}); }}
             />
           ) : (
             <img
