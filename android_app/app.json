@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "Rose",
+    "slug": "rose-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "scheme": "rose",
+    "splash": {
+      "backgroundColor": "#f8f8f8",
+      "resizeMode": "contain"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.rose.mobile"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#f8f8f8"
+      },
+      "package": "com.rose.mobile"
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-image-picker",
+      "expo-camera",
+      "expo-video"
+    ]
+  }
+}

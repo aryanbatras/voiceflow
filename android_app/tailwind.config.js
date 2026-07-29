@@ -1,0 +1,50 @@
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: ["./App.tsx", "./src/**/*.{ts,tsx}"],
+  presets: [require("nativewind/preset")],
+  theme: {
+    extend: {
+      colors: {
+        background: "#f8f8f8",
+        foreground: "#262626",
+        muted: "#f0f0f0",
+        "muted-foreground": "#8e8e8e",
+        accent: "#eaeaea",
+        "accent-foreground": "#333",
+        destructive: "#e74c3c",
+        "destructive-foreground": "#fff",
+        border: "#e3e3e3",
+        "surface-base": "#f8f8f8",
+        "surface-elevated": "#ffffff",
+        brand: "#f06",
+        "brand-hover": "#d9055a",
+        "brand-subtle": "rgba(255, 0, 102, 0.12)",
+        "brand-muted": "rgba(255, 0, 102, 0.04)",
+        blue: "#4a8fe0",
+        "blue-hover": "#3a7fcf",
+        "blue-subtle": "rgba(74, 143, 224, 0.10)",
+        // Dark theme
+        "dark-background": "#141414",
+        "dark-foreground": "#eee",
+        "dark-muted": "#2e2e2e",
+        "dark-muted-foreground": "#8c8c8c",
+        "dark-accent": "#333",
+        "dark-border": "#2e2e2e",
+        "dark-surface-base": "#121212",
+        "dark-surface-elevated": "#1e1e1e",
+      },
+      borderRadius: {
+        DEFAULT: "1.125rem",
+        sm: "0.5rem",
+        md: "0.75rem",
+        lg: "1rem",
+        xl: "1.25rem",
+        "2xl": "1.5rem",
+      },
+      fontFamily: {
+        sans: ["-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "sans-serif"],
+      },
+    },
+  },
+  plugins: [],
+};
