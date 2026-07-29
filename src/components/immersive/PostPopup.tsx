@@ -205,11 +205,11 @@ export default function PostPopup({ post, onClose }: PostPopupProps) {
         `}
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
-        {/* Close button */}
-        <div className="sticky top-0 z-10 flex justify-end p-3 pointer-events-none">
+        {/* Close button — no padding, floats over the media */}
+        <div className="sticky top-0 z-10 flex justify-end h-0 pointer-events-none">
           <button
             onClick={handleClose}
-            className="h-8 w-8 flex items-center justify-center rounded-full bg-black/40 text-white/70 hover:text-white hover:bg-white/20 transition-all backdrop-blur-md pointer-events-auto"
+            className="h-8 w-8 flex items-center justify-center rounded-full bg-black/50 text-white/70 hover:text-white hover:bg-white/20 transition-all backdrop-blur-md pointer-events-auto mt-3 mr-3"
             aria-label="Close"
           >
             <ArrowLeft className="h-4 w-4" />
